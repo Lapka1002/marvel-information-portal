@@ -1,7 +1,6 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
-import PropTypes from 'prop-types';
-import {CSSTransition, TransitionGroup} from 'react-transition-group';
+import { useState, useEffect} from 'react';
 import useMarvelService from '../../services/MarvelService';
+import { Link } from 'react-router-dom';
 import Spinner from '../spinner/spinner';
 import ErrorMessage from '../errorMessage/errorMessage';
 
@@ -23,14 +22,14 @@ const setContent = (process, Component, newItemLoading) => {
     }
 }
 
-const CharList = (props) => {
+const ComicsList = () => {
 
-    const [charList, setCharList] = useState([]);
+    const [comicsList, setComicsList] = useState([]);
     const [newItemLoading, setnewItemLoading] = useState(false);
-    const [offset, setOffset] = useState(210);
-    const [charEnded, setCharEnded] = useState(false);
-    
-    const {getAllCharacters, process, setProcess} = useMarvelService();
+    const [offset, setOffset] = useState(0);
+    const [comicsEnded, setComicsEnded] = useState(false);
+
+    const {getAllComics, process, setProcess} = useMarvelService();
 
     useEffect(() => {
         onRequest(offset, true);
@@ -39,80 +38,48 @@ const CharList = (props) => {
 
     const onRequest = (offset, initial) => {
         initial ? setnewItemLoading(false) : setnewItemLoading(true);
-        getAllCharacters(offset)
-            .then(onCharListLoaded)
+        getAllComics(offset)
+            .then(onComicsListLoaded)
             .then(() => setProcess('confirmed'));
     }
 
-    const onCharListLoaded = async(newCharList) => {
+    const onComicsListLoaded = (newComicsList) => {
         let ended = false;
-        if (newCharList.length < 9) {
+        if (newComicsList.length < 8) {
             ended = true;
         }
-        setCharList([...charList, ...newCharList]);
+        setComicsList([...comicsList, ...newComicsList]);
         setnewItemLoading(false);
-        setOffset(offset + 9);
-        setCharEnded(ended);
+        setOffset(offset + 8);
+        setComicsEnded(ended);
     }
 
-    const itemRefs = useRef([]);
-
-    const focusOnItem = (id) => {
-        itemRefs.current.forEach(item => item.classList.remove('char__item_selected'));
-        itemRefs.current[id].classList.add('char__item_selected');
-        itemRefs.current[id].focus();
-    }
-
-    const renderItems = arr => {
-        const items =  arr.map((item, i) => {
-            let imgStyle = {'objectFit' : 'cover'};
-            if (item.thumbnail === 'http://i.annihil.us/u/prod/marvel/i/mg/b/40/image_not_available.jpg') {
-                imgStyle = {'objectFit' : 'unset'};
-            }
-            
+    function renderItems (arr) {
+        const items = arr.map((item, i) => {
             return (
-                <CSSTransition key={item.id} timeout={500} classNames="char__item">
-                    <li 
-                        className="char__item"
-                        tabIndex={0}
-                        ref={el => itemRefs.current[i] = el}
-                        onClick={() => {
-                            props.onCharSelected(item.id);
-                            focusOnItem(i);
-                        }}
-                        onKeyPress={(e) => {
-                            if (e.key === ' ' || e.key === "Enter") {
-                                props.onCharSelected(item.id);
-                                focusOnItem(i);
-                            }
-                        }}>
-                            <img src={item.thumbnail} alt={item.name} style={imgStyle}/>
-                            <div className="char__name">{item.name}</div>
-                    </li>
-                </CSSTransition>
+                <li className="comics__item" key={i}>
+                    <Link to={`/comics/${item.id}`}>
+                        <img src={item.thumbnail} alt={item.title} className="comics__item-img"/>
+                        <div className="comics__item-name">{item.title}</div>
+                        <div className="comics__item-price">{item.price}</div>
+                    </Link>
+                </li>
             )
-        });
+        })
 
         return (
-            <ul className="char__grid">
-                <TransitionGroup component={null}>
-                    {items}
-                </TransitionGroup>
+            <ul className="comics__grid">
+                {items}
             </ul>
         )
     }
 
-    const elements = useMemo(() => {
-        return setContent(process, () => renderItems(charList), newItemLoading);
-        // eslint-disable-next-line
-    }, [process])
-
     return (
-        <div className="char__list">
-            {elements}
+        <div className="comics__list">
+            {setContent(process, () => renderItems(comicsList), newItemLoading)}
             <button 
                 disabled={newItemLoading} 
-                style={{'display' : charEnded ? 'none' : 'block'}}
+                style={{'display' : comicsEnded ? 'none' : 'block'}}
                 className="button button__main button__long"
                 onClick={() => onRequest(offset)}>
                 <div className="inner">load more</div>
@@ -121,8 +88,4 @@ const CharList = (props) => {
     )
 }
 
-CharList.propTypes = {
-    onCharSelected: PropTypes.func.isRequired
-}
-
-export default CharList;
+export default ComicsList;

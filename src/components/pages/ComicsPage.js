@@ -14,7 +14,7 @@ const ComicsPage = () => {
                 <title>Comics page</title>
             </Helmet>
             <AppBanner />
-            <ComicsList />
+            <ComicsList  />
         </>
     )
 }
